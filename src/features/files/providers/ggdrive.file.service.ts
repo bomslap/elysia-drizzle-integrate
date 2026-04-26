@@ -5,7 +5,7 @@ import FileStorageProvider, {
   UploadFileResult,
   ViewFile,
 } from "../files.provider";
-import { fileToReadableStream } from "../files.util";
+import { fileToReadableStream, imageToWebPTransformer } from "../files.util";
 
 const ggauth = new google.auth.OAuth2(
   process.env.CLIENT_ID,
@@ -29,6 +29,7 @@ class GoogleDriveFileStorageService extends FileStorageProvider {
   async upload(file: UploadFile): Promise<UploadFileResult> {
     const fileId = randomUUID();
     const stream = fileToReadableStream(file);
+    const webpStream = stream.pipe(imageToWebPTransformer);
 
     const { data } = await ggdrive.files.create({
       requestBody: {
@@ -36,8 +37,9 @@ class GoogleDriveFileStorageService extends FileStorageProvider {
         parents: [this.folderId],
       },
       media: {
-        body: stream,
-        mimeType: file.type,
+        body: webpStream,
+        // mimeType: file.type,
+        mimeType: "image/webp",
       },
     });
 
