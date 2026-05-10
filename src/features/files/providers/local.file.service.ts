@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
-import FileStorageProvider, { UploadFile, UploadFileResult, ViewFile } from "../files.provider";
+import { FilesProvider, UploadFile, UploadFileResult, ViewFile } from "../files.provider";
 
-class LocalFileStorageService extends FileStorageProvider {
+class LocalFileStorageService extends FilesProvider {
 
   constructor(private baseDir: string){
     super();
@@ -9,8 +9,14 @@ class LocalFileStorageService extends FileStorageProvider {
 
   async upload(file: UploadFile): Promise<UploadFileResult> {
     const fileId = randomUUID();
-    const ext = 'jpg';
-    const storageName = `${this.baseDir}/${fileId}.${ext}`;
+    const ext = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+      "application/pdf": "pdf"
+    };
+    const fileExt = ext[file.type as keyof typeof ext] ?? "bin";
+    const storageName = `${this.baseDir}/${fileId}.${fileExt}`;
 
     await Bun.write(storageName, file);
     return {
@@ -23,7 +29,7 @@ class LocalFileStorageService extends FileStorageProvider {
     return Bun.file(storageName);
   }
 
-  async edit(storageName: string, file: File): Promise<void> {
+  async edit(storageName: string, file: UploadFile): Promise<void> {
     await Bun.write(storageName, file);
   }
 

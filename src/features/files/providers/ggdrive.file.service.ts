@@ -1,11 +1,11 @@
 import { google } from "googleapis";
 import { randomUUID } from "crypto";
-import FileStorageProvider, {
+import { FilesProvider, 
   UploadFile,
   UploadFileResult,
   ViewFile,
 } from "../files.provider";
-import { fileToReadableStream, imageToWebPTransformer } from "../files.util";
+import { fileToReadableStream } from "../files.util";
 
 const ggauth = new google.auth.OAuth2(
   process.env.CLIENT_ID,
@@ -21,7 +21,7 @@ const ggdrive = google.drive({
   auth: ggauth,
 });
 
-class GoogleDriveFileStorageService extends FileStorageProvider {
+class GoogleDriveFileStorageService extends FilesProvider {
   constructor(private folderId: string) {
     super();
   }
@@ -29,7 +29,6 @@ class GoogleDriveFileStorageService extends FileStorageProvider {
   async upload(file: UploadFile): Promise<UploadFileResult> {
     const fileId = randomUUID();
     const stream = fileToReadableStream(file);
-    const webpStream = stream.pipe(imageToWebPTransformer);
 
     const { data } = await ggdrive.files.create({
       requestBody: {
@@ -37,9 +36,8 @@ class GoogleDriveFileStorageService extends FileStorageProvider {
         parents: [this.folderId],
       },
       media: {
-        body: webpStream,
-        // mimeType: file.type,
-        mimeType: "image/webp",
+        body: stream,
+        mimeType: file.type,
       },
     });
 
